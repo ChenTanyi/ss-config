@@ -15,7 +15,7 @@ file_name = 'ss.json'
 #------------ function -------------
 
 def decodeUrl(url):
-	raw = base64.b64decode(url.split('/')[-1]).strip().split(':')
+	raw = base64.b64decode(url[5:]).strip().split(':')
 	assert(len(raw) == 3)
 	return [raw[0]] + raw[1].split('@') + [int(raw[2])]
 
