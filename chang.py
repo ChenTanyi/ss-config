@@ -33,11 +33,16 @@ if __name__ == '__main__':
 	elif sys.argv[1] == '-i' or sys.argv[1] == '--image':
 		url = sys.argv[2]
 		qrImgFile = url.split('/')[-1]
-		u = urllib2.urlopen(url)
 
-		with open(qrImgFile, 'wb') as qrImg:
-			qrImg.write(u.read())
-		qrImg.close()
+		try:
+			u = urllib2.urlopen(url)
+			with open(qrImgFile, 'wb') as qrImg:
+				qrImg.write(u.read())
+		except:
+			if os.path.exists(qrImgFile):
+				os.remove(qrImgFile)
+			print >> sys.stderr, 'Can read the image of ' + url
+			exit(1)
 
 		qr = qrtools.QR()
 		qr.decode(qrImgFile)
