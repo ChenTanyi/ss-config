@@ -27,7 +27,7 @@ if __name__ == '__main__':
 	print json.dumps(config, indent = 2)
 
 	if len(sys.argv) < 2:
-		return
+		sys.exit(0)
 
 	if len(sys.argv) == 2:	
 		config['password'] = sys.argv[1]
