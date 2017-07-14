@@ -26,6 +26,9 @@ if __name__ == '__main__':
 
 	print json.dumps(config, indent = 2)
 
+	if len(sys.argv) < 2:
+		return
+
 	if len(sys.argv) == 2:	
 		config['password'] = sys.argv[1]
 	elif sys.argv[1] == '-u' or sys.argv[1] == '--url':
