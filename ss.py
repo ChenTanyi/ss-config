@@ -7,19 +7,18 @@ import re
 import json
 import base64
 import qrtools
-import urllib.request
+import requests
 import argparse
 import logging
 
 #------------ input ----------------
 cwd = os.path.abspath(os.path.dirname(__file__))
-os.chdir(cwd)
 file_name = 'ss.json'
 
 #------------ function -------------
 
 
-def decodeUrl(url):
+def decode_url(url):
     if re.match('ss://', url) is None:
         logging.error('url {} need to be: ss://***'.format(url))
         return dict()
@@ -43,40 +42,49 @@ def arg_parse():
     return args
 
 
+def scan_qr(url):  # image url
+    qrImgFile = url.split('/')[-1]
+
+    try:
+        r = requests.get(url)
+        r.raise_for_status()
+        with open(qrImgFile, 'wb') as qrImg:
+            qrImg.write(r.content)
+    except:
+        if os.path.exists(qrImgFile):
+            os.remove(qrImgFile)
+        logging.error('Can read the image of {}'.format(url))
+        sys.exit(1)
+
+    qr = qrtools.QR()
+    qr.decode(qrImgFile)
+
+    os.remove(qrImgFile)
+    return qr.data
+
+
+def gen_config(args, decode_url):
+    if args.url:
+        update_config = decode_url(args.url)
+    elif args.image:
+        url = scan_qr(args.image)
+        update_config = decode_url(url)
+    else:
+        update_config = {k: v for k, v in vars(args).items() if v is not None}
+
+    return update_config
+
+
 def config_update(args):
     with open(file_name, 'r') as f:
         config = json.load(f)
 
     print(json.dumps(config, indent = 2))
 
-    update_config = dict()
-    if args.url:
-        update_config = decodeUrl(args.url)
-    elif args.image:
-        url = args.image
-        qrImgFile = url.split('/')[-1]
-
-        try:
-            u = urllib.request.urlopen(url)
-            with open(qrImgFile, 'wb') as qrImg:
-                qrImg.write(u.read())
-        except:
-            if os.path.exists(qrImgFile):
-                os.remove(qrImgFile)
-            logging.error('Can read the image of {}'.format(url))
-            sys.exit(1)
-
-        qr = qrtools.QR()
-        qr.decode(qrImgFile)
-        update_config = decodeUrl(qr.data)
-
-        os.remove(qrImgFile)
-    else:
-        kwargs = vars(args)
-        update_config = {k: v for k, v in kwargs.items() if v is not None}
-
+    update_config = gen_config(args, decode_url)
     if not update_config:
         return
+
     config.update(update_config)
 
     print(json.dumps(config, indent = 2))
@@ -91,4 +99,5 @@ def main():
 
 
 if __name__ == '__main__':
+    os.chdir(cwd)
     main()

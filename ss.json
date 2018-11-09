@@ -1,8 +1,8 @@
 {
-  "server_port": 23456, 
-  "local_port": 1080, 
-  "server": "138.68.61.42", 
-  "timeout": 300, 
-  "password": "30052811", 
-  "method": "rc4-md5"
+  "server_port": 18870,
+  "local_port": 1080,
+  "server": "b.isxb.top",
+  "timeout": 300,
+  "password": "isx.yt-23533376",
+  "method": "aes-256-cfb"
 }
