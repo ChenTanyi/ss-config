@@ -2,20 +2,29 @@
 # -*- coding: utf-8 -*-
 
 import sys
+import io
 import os
 import re
 import json
+import zbar
 import base64
-import qrtools
 import requests
 import argparse
 import logging
 
+import numpy as np
+from PIL import Image, ImageGrab
+
 #------------ input ----------------
 cwd = os.path.abspath(os.path.dirname(__file__))
 file_name = 'ss.json'
+image_file = 'a.png'
 
 #------------ function -------------
+
+
+def is_url(url):
+    return re.match(r'https?://', url) is not None
 
 
 def decode_url(url):
@@ -42,25 +51,37 @@ def arg_parse():
     return args
 
 
-def scan_qr(url):  # image url
-    qrImgFile = url.split('/')[-1]
+def get_qr(url):
+    r = requests.get(url)
+    r.raise_for_status()
 
-    try:
-        r = requests.get(url)
-        r.raise_for_status()
-        with open(qrImgFile, 'wb') as qrImg:
-            qrImg.write(r.content)
-    except:
-        if os.path.exists(qrImgFile):
-            os.remove(qrImgFile)
+    if not r.ok:
         logging.error('Can read the image of {}'.format(url))
         sys.exit(1)
 
-    qr = qrtools.QR()
-    qr.decode(qrImgFile)
+    return r.content
 
-    os.remove(qrImgFile)
-    return qr.data
+
+def scan_qr(image):  # image or bytes data
+    if isinstance(image, str):
+        if is_url(image):
+            image = get_qr(image)
+        elif os.path.exists(image):
+            with open(image, 'rb') as f:
+                image = f.read()
+        image = Image.open(io.BytesIO(image))
+
+    if not isinstance(image, Image.Image):
+        logging.error('Image type error, get {}'.format(type(image)))
+        sys.exit(1)
+
+    image = image.convert('L')
+    image = np.array(image)
+
+    scanner = zbar.Scanner()
+    qr = scanner.scan(image)[0]
+
+    return qr.data.decode()
 
 
 def gen_config(args, decode_url):
@@ -70,7 +91,14 @@ def gen_config(args, decode_url):
         url = scan_qr(args.image)
         update_config = decode_url(url)
     else:
-        update_config = {k: v for k, v in vars(args).items() if v is not None}
+        im = ImageGrab.grabclipboard()
+        if im:
+            url = scan_qr(im)
+            update_config = decode_url(url)
+        else:
+            update_config = {
+                k: v for k, v in vars(args).items() if v is not None
+            }
 
     return update_config
 
