@@ -48,29 +48,30 @@ def gen_v2json(raw):
 
     stream_setting = dict()
     net = raw.get('net')
-    if net == 'h2':
-        net = 'http'
-    stream_setting['network'] = net
-    if raw.get('tls') == 'tls':
-        stream_setting['security'] = 'tls'
+    if net:
+        if net == 'h2':
+            net = 'http'
+        stream_setting['network'] = net
+        if raw.get('tls') == 'tls':
+            stream_setting['security'] = 'tls'
 
-    settings = net + 'Settings'
-    if net == 'kcp' and raw.get('type'):
-        stream_setting[settings] = {'header': {'type': raw.get('type')}}
+        settings = net + 'Settings'
+        if net == 'kcp' and raw.get('type'):
+            stream_setting[settings] = {'header': {'type': raw.get('type')}}
 
-    if net == 'ws':
-        stream_setting[settings] = {
-            'path': raw.get('path', '/'),
-            'headers': {
-                'Host': raw.get('host', '')
+        if net == 'ws':
+            stream_setting[settings] = {
+                'path': raw.get('path', '/'),
+                'headers': {
+                    'Host': raw.get('host', '')
+                }
             }
-        }
 
-    if net == 'http':
-        stream_setting[settings] = {
-            'host': raw.get('host', '').split(','),
-            'path': raw.get('paht', '/')
-        }
+        if net == 'http':
+            stream_setting[settings] = {
+                'host': raw.get('host', '').split(','),
+                'path': raw.get('paht', '/')
+            }
 
     return config, stream_setting
 
